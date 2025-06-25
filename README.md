@@ -1,3 +1,4 @@
+
 # 🚀 MicroStack
 
 A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, and **Docker Compose**.
@@ -7,39 +8,38 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 ## ⚙️ Core Functionality
 
 ### 🧑‍💼 User Service (`/users`)
-- Built with **FastAPI**
-- Connects to **PostgreSQL**
-- Returns a static response from a DB query to verify connectivity
-- Loads DB credentials securely from `.env` via `python-dotenv`
+
+* Built with **FastAPI**
+* Integrated with **PostgreSQL** for persistent user data
+* Implements complete **CRUD operations** for user management
+* Includes a **robust retry mechanism** for reliable database connections
+* Environment configuration is securely handled via `.env` using `python-dotenv`
+
+---
 
 ### 📦 Order Service (`/orders`)
-- Built with **FastAPI**
-- Connects to **Redis**
-- Fetches and returns `recent_order` from Redis cache
-- Uses `.env` and `python-dotenv` for secure Redis config
+
+* Built with **FastAPI**
+* Integrated with **PostgreSQL** for order persistence
+* Implements complete **CRUD operations** for order processing
+* Includes a **retry mechanism** to gracefully handle DB startup delays or failures
+* Secure environment variable loading with `.env` using `python-dotenv`
 
 ---
 
 ## 🐳 Dockerized Microservices
 
-- Each service has its own **Dockerfile**
-- Services are orchestrated using **Docker Compose**
-- PostgreSQL and Redis run as separate containers
+* Each microservice is containerized using **Docker**
+* **Docker Compose** is used for service orchestration
+* **PostgreSQL** and **Redis** are provisioned as independent containers
+* Services are designed to start independently with support for retries and health checks
 
 ---
 
 ## 🔐 Environment Config
 
-- All sensitive values are stored in `.env` files (excluded via `.gitignore`)
-- Sample config provided via `.env.example` files in each service
-
----
-
-## ▶️ Endpoints
-
-| Service        | Endpoint             | Description                   |
-|----------------|----------------------|-------------------------------|
-| User Service   | `/users`             | Returns a message from DB     |
-| Order Service  | `/orders`            | Returns cached Redis value    |
+* All sensitive credentials (DB, Redis) are managed via `.env` files
+* `.env.example` templates are included for easy setup
+* Secure, production-aligned practices applied for config management
 
 ---
