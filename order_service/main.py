@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 import time
 from sqlalchemy.exc import OperationalError
+import httpx
 
 load_dotenv()
 
@@ -46,6 +47,14 @@ def get_all_orders(db: Session = Depends(get_db)):
 
 @app.post("/orders", response_model=OrderOut)
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    # Validate user_id from user_service
+    try:
+        response = httpx.get(f"http://user_service:8000/users/{order.user_id}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Invalid user_id. User does not exist.")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"User service unreachable: {str(e)}")
+
     new_order = Order(user_id=order.user_id, item_name=order.item_name, quantity=order.quantity)
     db.add(new_order)
     db.commit()
