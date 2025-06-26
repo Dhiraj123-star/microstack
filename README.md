@@ -1,4 +1,3 @@
-
 # 🚀 MicroStack
 
 A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, and **Docker Compose**.
@@ -24,6 +23,8 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 * Implements complete **CRUD operations** for order processing
 * Includes a **retry mechanism** to gracefully handle DB startup delays or failures
 * Secure environment variable loading with `.env` using `python-dotenv`
+* **Validates `user_id` via User Service** before creating an order — prevents creation of orders for non-existent users
+* Uses **internal HTTP calls** to communicate with the User Service for validation and data integrity
 
 ---
 
@@ -41,5 +42,3 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 * All sensitive credentials (DB, Redis) are managed via `.env` files
 * `.env.example` templates are included for easy setup
 * Secure, production-aligned practices applied for config management
-
----
