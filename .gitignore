@@ -30,3 +30,9 @@ build/
 
 # Compiled binary
 *.out
+
+# SSL/TLS certificates
+certs/
+*.pem
+*.crt
+*.key
