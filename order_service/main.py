@@ -14,8 +14,10 @@ load_dotenv()
 DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 
 # Retry mechanism for DB connection
-retries = 10
-for i in range(retries):
+MAX_RETRIES = 20
+DELAY = 2
+
+for attempt in range(1, MAX_RETRIES + 1):
     try:
         engine = create_engine(DATABASE_URL)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -23,12 +25,12 @@ for i in range(retries):
         print("✅ OrderService: Database connection successful.")
         break
     except OperationalError as e:
-        print(f"🔁 OrderService: Retry ({i+1}/{retries}) - DB connection failed: {e}")
-        time.sleep(2)
+        print(f"🔁 OrderService: Retry ({attempt}/{MAX_RETRIES}) - DB connection failed: {e}")
+        time.sleep(DELAY)
 else:
     raise Exception("❌ OrderService: Could not connect to the database after multiple retries.")
 
-app = FastAPI()
+app = FastAPI(root_path="/orders")
 
 def get_db():
     db = SessionLocal()
@@ -37,15 +39,15 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/orders")
+@app.get("/")
 def health_check():
     return {"message": "List of orders from PostgreSQL"}
 
-@app.get("/orders/all", response_model=list[OrderOut])
+@app.get("/all", response_model=list[OrderOut])
 def get_all_orders(db: Session = Depends(get_db)):
     return db.query(Order).all()
 
-@app.post("/orders", response_model=OrderOut)
+@app.post("/", response_model=OrderOut)
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     # Validate user_id from user_service
     try:
@@ -61,14 +63,14 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db.refresh(new_order)
     return new_order
 
-@app.get("/orders/{order_id}", response_model=OrderOut)
+@app.get("/{order_id}", response_model=OrderOut)
 def get_order(order_id: int, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
-@app.put("/orders/{order_id}", response_model=OrderOut)
+@app.put("/{order_id}", response_model=OrderOut)
 def update_order(order_id: int, order_data: OrderUpdate, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -83,7 +85,7 @@ def update_order(order_id: int, order_data: OrderUpdate, db: Session = Depends(g
     db.refresh(order)
     return order
 
-@app.delete("/orders/{order_id}")
+@app.delete("/{order_id}")
 def delete_order(order_id: int, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
