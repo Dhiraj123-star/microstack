@@ -13,22 +13,23 @@ load_dotenv()
 DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 
 # Retry logic for database connection and metadata creation
-MAX_RETRIES = 10
-for i in range(MAX_RETRIES):
+MAX_RETRIES = 20
+DELAY = 2
+
+for attempt in range(1, MAX_RETRIES + 1):
     try:
         engine = create_engine(DATABASE_URL)
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         Base.metadata.create_all(bind=engine)
         print("✅ Connected to the database and initialized schema.")
         break
     except OperationalError as e:
-        print(f"⏳ Attempt {i + 1}/{MAX_RETRIES} - Database not ready yet: {e}")
-        time.sleep(2)
+        print(f"⏳ Attempt {attempt}/{MAX_RETRIES} - Database not ready yet: {e}")
+        time.sleep(DELAY)
 else:
     raise Exception("❌ Could not connect to the database after multiple attempts.")
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-app = FastAPI()
+app = FastAPI(root_path="/users")
 
 def get_db():
     db = SessionLocal()
@@ -37,17 +38,17 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/users")
+@app.get("/")
 def health_check():
     return {"message": "List of users from PostgreSQL"}
 
 # GET all users
-@app.get("/users/all", response_model=list[UserOut])
+@app.get("/all", response_model=list[UserOut])
 def get_all_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 # POST create user
-@app.post("/users", response_model=UserOut)
+@app.post("/", response_model=UserOut)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
@@ -58,7 +59,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 # GET user by ID
-@app.get("/users/{user_id}", response_model=UserOut)
+@app.get("/{user_id}", response_model=UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -66,7 +67,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     return user
 
 # PUT update user
-@app.put("/users/{user_id}", response_model=UserOut)
+@app.put("/{user_id}", response_model=UserOut)
 def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -80,7 +81,7 @@ def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_d
     return user
 
 # DELETE user
-@app.delete("/users/{user_id}")
+@app.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
