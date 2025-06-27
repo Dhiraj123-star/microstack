@@ -58,26 +58,6 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 
 ---
 
-## 🔐 Environment & Secrets Management
-
-- All services use `.env` files for environment configuration
-- Example env file (`.env.example`) provided
-- **SSL certs and keys are excluded** from version control:
-  ```bash
-  certs/
-  *.crt
-  *.key
-````
-
----
-
-
-* ➕ Added **HTTPS support with Nginx SSL termination**
-* 🛠️ Fixed **Swagger `/docs` path issues** with reverse proxy
-* 🚦 Configured **Nginx reverse proxy routes** for cleaner URLs
-* 🔒 Implemented `.gitignore` rules for certs and sensitive keys
-
----
 
 Made with ❤️ using FastAPI, PostgreSQL, and Docker — now HTTPS-ready! 🚀
 
