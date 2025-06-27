@@ -1,6 +1,7 @@
+
 # 🚀 MicroStack
 
-A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, and **Docker Compose**.
+A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, **Nginx**, and **Docker Compose** — fully containerized and secured with **HTTPS**. 🌐🔐
 
 ---
 
@@ -8,37 +9,75 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 
 ### 🧑‍💼 User Service (`/users`)
 
-* Built with **FastAPI**
-* Integrated with **PostgreSQL** for persistent user data
-* Implements complete **CRUD operations** for user management
-* Includes a **robust retry mechanism** for reliable database connections
-* Environment configuration is securely handled via `.env` using `python-dotenv`
+- Built with **FastAPI**
+- Integrated with **PostgreSQL** for persistent user data
+- Complete **CRUD operations** for user management
+- Includes a **robust retry mechanism** for database connection reliability
+- Configured via `.env` with `python-dotenv`
+- Mounted under `/users` path behind **Nginx reverse proxy**
+- Fully accessible via **HTTPS**
+- Swagger docs: `https://localhost/users/docs`
 
 ---
 
 ### 📦 Order Service (`/orders`)
 
-* Built with **FastAPI**
-* Integrated with **PostgreSQL** for order persistence
-* Implements complete **CRUD operations** for order processing
-* Includes a **retry mechanism** to gracefully handle DB startup delays or failures
-* Secure environment variable loading with `.env` using `python-dotenv`
-* **Validates `user_id` via User Service** before creating an order — prevents creation of orders for non-existent users
-* Uses **internal HTTP calls** to communicate with the User Service for validation and data integrity
+- Built with **FastAPI**
+- Integrated with **PostgreSQL** for order persistence
+- Full **CRUD functionality** for orders
+- Implements **retry logic** for handling DB readiness
+- Uses **HTTP call to User Service** to validate `user_id` before order creation
+- Prevents creation of orders for non-existent users
+- Managed securely via `.env` and `python-dotenv`
+- Mounted under `/orders` path via **Nginx reverse proxy**
+- Exposed over **HTTPS**
+- Swagger docs: `https://localhost/orders/docs`
 
 ---
 
-## 🐳 Dockerized Microservices
+## 🐳 Dockerized Services & Orchestration
 
-* Each microservice is containerized using **Docker**
-* **Docker Compose** is used for service orchestration
-* **PostgreSQL** and **Redis** are provisioned as independent containers
-* Services are designed to start independently with support for retries and health checks
+- Microservices and dependencies are containerized with **Docker**
+- **Docker Compose** used for orchestration
+- Independent PostgreSQL DB containers for each service
+- Redis included for caching/future use
+- Services implement **startup retries** for database readiness
+- Centralized routing and SSL handled by **Nginx**
 
 ---
 
-## 🔐 Environment Config
+## 🌐 HTTPS via Nginx
 
-* All sensitive credentials (DB, Redis) are managed via `.env` files
-* `.env.example` templates are included for easy setup
-* Secure, production-aligned practices applied for config management
+- **Nginx** serves as a reverse proxy for all services
+- Routes:
+  - `/users` → `user_service`
+  - `/orders` → `order_service`
+- Supports **HTTPS with self-signed SSL certificates**
+- ✅ Valid SSL configuration enables full Swagger UI and secure API access
+- 🔐 Certificates (`.crt`, `.key`) are **ignored from version control** using `.gitignore`
+
+---
+
+## 🔐 Environment & Secrets Management
+
+- All services use `.env` files for environment configuration
+- Example env file (`.env.example`) provided
+- **SSL certs and keys are excluded** from version control:
+  ```bash
+  certs/
+  *.crt
+  *.key
+````
+
+---
+
+
+* ➕ Added **HTTPS support with Nginx SSL termination**
+* 🛠️ Fixed **Swagger `/docs` path issues** with reverse proxy
+* 🚦 Configured **Nginx reverse proxy routes** for cleaner URLs
+* 🔒 Implemented `.gitignore` rules for certs and sensitive keys
+
+---
+
+Made with ❤️ using FastAPI, PostgreSQL, and Docker — now HTTPS-ready! 🚀
+
