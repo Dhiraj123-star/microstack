@@ -1,6 +1,6 @@
 # 🚀 MicroStack
 
-A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, **Nginx**, and **Docker Compose** — fully containerized and secured with **HTTPS**. 🌐🔐
+A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, **Nginx**, and **Docker Compose** — fully containerized, cache-optimized, and secured with **HTTPS**. 🌐🔐
 
 ---
 
@@ -47,4 +47,13 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 
 ---
 
-Made with ❤️ using FastAPI, PostgreSQL, Redis, and Docker — now HTTPS & cache optimized! 🚀
+## 🔁 CI/CD with GitHub Actions
+
+- **Automatic Docker image build & push** on every commit to `main` branch
+- Leverages GitHub Actions for seamless CI/CD
+- Publishes Docker images to **[dhiraj918106/microstack](https://hub.docker.com/r/dhiraj918106/microstack)**
+- Keeps the build process consistent and production-ready
+
+---
+
+Made with ❤️ using FastAPI, PostgreSQL, Redis, and Docker — now HTTPS & CI/CD ready! 🚀
