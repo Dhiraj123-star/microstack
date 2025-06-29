@@ -23,9 +23,9 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_DB: users
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
 
@@ -33,9 +33,9 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_DB: orders
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${ORDER_DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5434:5432"
 
@@ -43,6 +43,7 @@ services:
     image: redis:latest
     ports:
       - "6380:6379"
+
   nginx:
     image: nginx:latest
     volumes:
