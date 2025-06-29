@@ -8,10 +8,17 @@ import os
 import time
 from sqlalchemy.exc import OperationalError
 import httpx
+import redis
+import json
 
 load_dotenv()
 
 DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+
+# Redis client
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
 # Retry mechanism for DB connection
 MAX_RETRIES = 20
@@ -45,7 +52,16 @@ def health_check():
 
 @app.get("/all", response_model=list[OrderOut])
 def get_all_orders(db: Session = Depends(get_db)):
-    return db.query(Order).all()
+    cache_key = "orders:all"
+    cached = r.get(cache_key)
+    if cached:
+        print("📦 Serving /all from Redis cache")
+        return json.loads(cached)
+    
+    orders = db.query(Order).all()
+    result = [OrderOut.from_orm(order).dict() for order in orders]
+    r.set(cache_key, json.dumps(result))
+    return result
 
 @app.post("/", response_model=OrderOut)
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
@@ -61,14 +77,26 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
+
+    # Invalidate Redis cache
+    r.delete("orders:all")
     return new_order
 
 @app.get("/{order_id}", response_model=OrderOut)
 def get_order(order_id: int, db: Session = Depends(get_db)):
+    cache_key = f"orders:{order_id}"
+    cached = r.get(cache_key)
+    if cached:
+        print(f"📦 Serving /{order_id} from Redis cache")
+        return json.loads(cached)
+    
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    
+    result = OrderOut.from_orm(order).dict()
+    r.set(cache_key, json.dumps(result))
+    return result
 
 @app.put("/{order_id}", response_model=OrderOut)
 def update_order(order_id: int, order_data: OrderUpdate, db: Session = Depends(get_db)):
@@ -83,6 +111,10 @@ def update_order(order_id: int, order_data: OrderUpdate, db: Session = Depends(g
         order.status = order_data.status
     db.commit()
     db.refresh(order)
+
+    # Invalidate Redis cache
+    r.delete("orders:all")
+    r.delete(f"orders:{order_id}")
     return order
 
 @app.delete("/{order_id}")
@@ -92,4 +124,8 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Order not found")
     db.delete(order)
     db.commit()
+
+    # Invalidate Redis cache
+    r.delete("orders:all")
+    r.delete(f"orders:{order_id}")
     return {"detail": "Order deleted"}
