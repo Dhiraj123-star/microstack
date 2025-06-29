@@ -7,10 +7,17 @@ from dotenv import load_dotenv
 import os
 import time
 from sqlalchemy.exc import OperationalError
+import redis
+import json
 
 load_dotenv()
 
 DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+
+# Redis client
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
 # Retry logic for database connection and metadata creation
 MAX_RETRIES = 20
@@ -45,7 +52,16 @@ def health_check():
 # GET all users
 @app.get("/all", response_model=list[UserOut])
 def get_all_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+    cache_key = "users:all"
+    cached = r.get(cache_key)
+    if cached:
+        print("📦 Serving /all from Redis cache")
+        return json.loads(cached)
+
+    users = db.query(User).all()
+    result = [UserOut.from_orm(user).dict() for user in users]
+    r.set(cache_key, json.dumps(result))
+    return result
 
 # POST create user
 @app.post("/", response_model=UserOut)
@@ -56,15 +72,26 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Invalidate Redis cache
+    r.delete("users:all")
     return new_user
 
 # GET user by ID
 @app.get("/{user_id}", response_model=UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
+    cache_key = f"users:{user_id}"
+    cached = r.get(cache_key)
+    if cached:
+        print(f"📦 Serving /{user_id} from Redis cache")
+        return json.loads(cached)
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    result = UserOut.from_orm(user).dict()
+    r.set(cache_key, json.dumps(result))
+    return result
 
 # PUT update user
 @app.put("/{user_id}", response_model=UserOut)
@@ -78,6 +105,10 @@ def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_d
         user.email = user_data.email
     db.commit()
     db.refresh(user)
+
+    # Invalidate Redis cache
+    r.delete("users:all")
+    r.delete(f"users:{user_id}")
     return user
 
 # DELETE user
@@ -88,4 +119,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
     db.commit()
+
+    # Invalidate Redis cache
+    r.delete("users:all")
+    r.delete(f"users:{user_id}")
     return {"detail": "User deleted"}
