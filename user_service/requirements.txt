@@ -5,3 +5,4 @@ python-dotenv
 sqlalchemy
 pydantic[email]
 psycopg2-binary  
+redis
