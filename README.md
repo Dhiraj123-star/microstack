@@ -1,4 +1,3 @@
-
 # 🚀 MicroStack
 
 A lightweight, production-grade microservices system using **FastAPI**, **PostgreSQL**, **Redis**, **Nginx**, and **Docker Compose** — fully containerized and secured with **HTTPS**. 🌐🔐
@@ -12,11 +11,12 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 - Built with **FastAPI**
 - Integrated with **PostgreSQL** for persistent user data
 - Complete **CRUD operations** for user management
-- Includes a **robust retry mechanism** for database connection reliability
-- Configured via `.env` with `python-dotenv`
-- Mounted under `/users` path behind **Nginx reverse proxy**
-- Fully accessible via **HTTPS**
-- Swagger docs: `https://localhost/users/docs`
+- Uses **Redis caching** for optimized GET requests
+- Automatically **invalidates cache** on create, update, and delete operations
+- Implements **robust retry mechanism** for reliable DB connection
+- Loads configuration via `.env` using `python-dotenv`
+- Exposed behind **Nginx reverse proxy** over **HTTPS**
+- Swagger: `https://localhost/users/docs`
 
 ---
 
@@ -24,40 +24,27 @@ A lightweight, production-grade microservices system using **FastAPI**, **Postgr
 
 - Built with **FastAPI**
 - Integrated with **PostgreSQL** for order persistence
-- Full **CRUD functionality** for orders
-- Implements **retry logic** for handling DB readiness
-- Uses **HTTP call to User Service** to validate `user_id` before order creation
-- Prevents creation of orders for non-existent users
-- Managed securely via `.env` and `python-dotenv`
-- Mounted under `/orders` path via **Nginx reverse proxy**
-- Exposed over **HTTPS**
-- Swagger docs: `https://localhost/orders/docs`
+- Full **CRUD operations** for orders
+- Validates `user_id` via internal HTTP call to **User Service**
+- Uses **Redis cache** for GET requests
+- Cache is **invalidated** on any DB write (create/update/delete)
+- Retry mechanism ensures DB readiness at startup
+- Config managed via `.env` and `python-dotenv`
+- Exposed through **Nginx reverse proxy** over **HTTPS**
+- Swagger: `https://localhost/orders/docs`
 
 ---
 
-## 🐳 Dockerized Services & Orchestration
+## 🐳 Dockerized & Orchestrated
 
-- Microservices and dependencies are containerized with **Docker**
-- **Docker Compose** used for orchestration
-- Independent PostgreSQL DB containers for each service
-- Redis included for caching/future use
-- Services implement **startup retries** for database readiness
-- Centralized routing and SSL handled by **Nginx**
-
----
-
-## 🌐 HTTPS via Nginx
-
-- **Nginx** serves as a reverse proxy for all services
-- Routes:
-  - `/users` → `user_service`
-  - `/orders` → `order_service`
-- Supports **HTTPS with self-signed SSL certificates**
-- ✅ Valid SSL configuration enables full Swagger UI and secure API access
-- 🔐 Certificates (`.crt`, `.key`) are **ignored from version control** using `.gitignore`
+- All services containerized using **Docker**
+- **Docker Compose** for orchestration
+- Each service has a dedicated **PostgreSQL** instance
+- Shared **Redis** container for caching
+- **Nginx** routes traffic and serves SSL
+- Retry logic ensures services wait for DB readiness
+- HTTPS enabled via **self-signed SSL certificates**
 
 ---
 
-
-Made with ❤️ using FastAPI, PostgreSQL, and Docker — now HTTPS-ready! 🚀
-
+Made with ❤️ using FastAPI, PostgreSQL, Redis, and Docker — now HTTPS & cache optimized! 🚀
